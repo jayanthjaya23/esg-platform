@@ -1,0 +1,4 @@
+PlantCode,Material,Quantity,Unit,Date
+PLANT_101,Diesel Fuel,500,Liters,2026-05-01
+PLANT_101,Petrol Fuel,300,Liters,2026-05-03
+PLANT_205,Lubricant Oil,150,Kg,2026-05-05

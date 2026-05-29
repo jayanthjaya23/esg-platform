@@ -1,0 +1,4 @@
+Employee,TravelType,Distance,Unit,Date
+John Doe,Flight,1200,km,2026-05-02
+Jane Smith,Hotel,3,nights,2026-05-04
+Alex Ray,Taxi,45,km,2026-05-05

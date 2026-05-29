@@ -1,0 +1,4 @@
+MeterID,Consumption,Unit,BillingMonth
+MTR_001,1200,kWh,2026-05
+MTR_002,950,kWh,2026-05
+MTR_003,1400,kWh,2026-05
