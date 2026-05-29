@@ -1,9 +1,5 @@
-import React, {
-  useEffect,
-  useState
-} from 'react';
-
-import axios from 'axios';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 import {
   PieChart,
@@ -15,31 +11,117 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  ResponsiveContainer
-} from 'recharts';
-
+  ResponsiveContainer,
+} from "recharts";
 
 export default function Dashboard() {
 
-  const [records, setRecords] = useState([]);
+  const API_BASE = "http://127.0.0.1:8000";
 
+  const [records, setRecords] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [file, setFile] = useState(null);
+  const [sourceType, setSourceType] = useState("sap");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
-
-    fetchEmissions();
-
+    fetchRecords();
+    fetchAuditLogs();
   }, []);
 
-
-  const fetchEmissions = async () => {
+  const fetchRecords = async () => {
 
     try {
 
       const response = await axios.get(
-        'http://127.0.0.1:8000/api/emissions/'
+        `${API_BASE}/api/emissions/`
       );
 
-      setRecords(response.data);
+      setRecords(
+        Array.isArray(response.data)
+          ? response.data
+          : []
+      );
+
+    } catch (error) {
+
+      console.error(error);
+      setRecords([]);
+    }
+  };
+
+  const fetchAuditLogs = async () => {
+
+    try {
+
+      const response = await axios.get(
+        `${API_BASE}/api/audit-logs/`
+      );
+
+      setAuditLogs(
+        Array.isArray(response.data)
+          ? response.data
+          : []
+      );
+
+    } catch (error) {
+
+      console.error(error);
+      setAuditLogs([]);
+    }
+  };
+
+  const uploadFile = async () => {
+
+    if (!file) {
+      alert("Please select CSV file");
+      return;
+    }
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+    formData.append(
+      "source_type",
+      sourceType
+    );
+
+    try {
+
+      await axios.post(
+        `${API_BASE}/api/upload/`,
+        formData,
+        {
+          headers: {
+            "Content-Type":
+              "multipart/form-data",
+          },
+        }
+      );
+
+      setMessage("Upload successful");
+
+      fetchRecords();
+      fetchAuditLogs();
+
+    } catch (error) {
+
+      console.error(error);
+
+      setMessage("Upload failed");
+    }
+  };
+
+  const approveRecord = async (id) => {
+
+    try {
+
+      await axios.post(
+        `${API_BASE}/api/approve/${id}/`
+      );
+
+      fetchRecords();
+      fetchAuditLogs();
 
     } catch (error) {
 
@@ -47,273 +129,286 @@ export default function Dashboard() {
     }
   };
 
-
-  const approveRecord = async (id) => {
-
-    await axios.post(
-      `http://127.0.0.1:8000/api/approve/${id}/`
-    );
-
-    fetchEmissions();
-  };
-
-
   const rejectRecord = async (id) => {
 
-    await axios.post(
-      `http://127.0.0.1:8000/api/reject/${id}/`
-    );
+    try {
 
-    fetchEmissions();
+      await axios.post(
+        `${API_BASE}/api/reject/${id}/`
+      );
+
+      fetchRecords();
+      fetchAuditLogs();
+
+    } catch (error) {
+
+      console.error(error);
+    }
   };
 
-
-  // METRICS
-
   const totalEmissions = records.reduce(
-    (sum, r) => sum + r.co2e_kg,
+    (sum, r) =>
+      sum + Number(r.co2e_kg || 0),
     0
   );
 
-  const approvedCount = records.filter(
-    r => r.approval_status === 'approved'
-  ).length;
-
-  const warningCount = records.filter(
-    r => r.validation_status === 'warning'
-  ).length;
-
-
-  // PIE CHART
-
   const scopeData = [
-
     {
-      name: 'Scope 1',
+      name: "Scope 1",
       value: records.filter(
-        r => r.scope === 'scope_1'
-      ).length
+        (r) => r.scope === "scope_1"
+      ).length,
     },
-
     {
-      name: 'Scope 2',
+      name: "Scope 2",
       value: records.filter(
-        r => r.scope === 'scope_2'
-      ).length
+        (r) => r.scope === "scope_2"
+      ).length,
     },
-
     {
-      name: 'Scope 3',
+      name: "Scope 3",
       value: records.filter(
-        r => r.scope === 'scope_3'
-      ).length
+        (r) => r.scope === "scope_3"
+      ).length,
     },
   ];
-
-
-  // BAR CHART
 
   const sourceData = [
-
     {
-      name: 'SAP',
+      name: "SAP",
       emissions: records
-        .filter(r => r.source_type === 'sap')
-        .reduce((sum, r) => sum + r.co2e_kg, 0)
+        .filter(
+          (r) => r.source_type === "sap"
+        )
+        .reduce(
+          (sum, r) =>
+            sum + Number(r.co2e_kg || 0),
+          0
+        ),
     },
-
     {
-      name: 'Utility',
+      name: "Utility",
       emissions: records
-        .filter(r => r.source_type === 'utility')
-        .reduce((sum, r) => sum + r.co2e_kg, 0)
+        .filter(
+          (r) =>
+            r.source_type === "utility"
+        )
+        .reduce(
+          (sum, r) =>
+            sum + Number(r.co2e_kg || 0),
+          0
+        ),
     },
-
     {
-      name: 'Travel',
+      name: "Travel",
       emissions: records
-        .filter(r => r.source_type === 'travel')
-        .reduce((sum, r) => sum + r.co2e_kg, 0)
+        .filter(
+          (r) =>
+            r.source_type === "travel"
+        )
+        .reduce(
+          (sum, r) =>
+            sum + Number(r.co2e_kg || 0),
+          0
+        ),
     },
   ];
-
 
   const COLORS = [
-    '#2563eb',
-    '#16a34a',
-    '#dc2626'
+    "#2563eb",
+    "#16a34a",
+    "#dc2626",
   ];
-
 
   return (
 
-    <div>
+    <div className="dashboard-container">
 
-      {/* TOPBAR */}
+      <div className="sidebar">
 
-      <div className="topbar">
+        <h2>🌍 ESG Platform</h2>
 
-        <div>
+        <ul>
+          <li>Dashboard</li>
+          <li>Uploads</li>
+          <li>Analytics</li>
+          <li>Audit Logs</li>
+        </ul>
+
+      </div>
+
+      <div className="main-content">
+
+        <div className="topbar">
 
           <h1>
             ESG Analytics Dashboard
           </h1>
 
-          <div className="topbar-subtitle">
+          <p>
             Enterprise Emissions Intelligence Platform
-          </div>
+          </p>
 
         </div>
 
-      </div>
+        {/* Upload */}
 
+        <div className="upload-card">
 
-      {/* METRIC CARDS */}
+          <h2>
+            Upload ESG CSV
+          </h2>
 
-      <div className="metrics-grid">
-
-        <div className="metric-card">
-
-          <div className="metric-label">
-            Total Records
-          </div>
-
-          <div className="metric-value">
-            {records.length}
-          </div>
-
-        </div>
-
-
-        <div className="metric-card">
-
-          <div className="metric-label">
-            Total CO₂e
-          </div>
-
-          <div className="metric-value">
-            {totalEmissions.toFixed(0)} kg
-          </div>
-
-        </div>
-
-
-        <div className="metric-card">
-
-          <div className="metric-label">
-            Approved Records
-          </div>
-
-          <div className="metric-value">
-            {approvedCount}
-          </div>
-
-        </div>
-
-
-        <div className="metric-card">
-
-          <div className="metric-label">
-            Validation Warnings
-          </div>
-
-          <div className="metric-value">
-            {warningCount}
-          </div>
-
-        </div>
-
-      </div>
-
-
-      {/* CHARTS */}
-
-      <div className="charts-grid">
-
-        <div className="chart-card">
-
-          <h3>
-            Scope Distribution
-          </h3>
-
-          <ResponsiveContainer
-            width="100%"
-            height={320}
+          <select
+            value={sourceType}
+            onChange={(e) =>
+              setSourceType(e.target.value)
+            }
           >
 
-            <PieChart>
+            <option value="sap">
+              SAP
+            </option>
 
-              <Pie
-                data={scopeData}
-                dataKey="value"
-                outerRadius={110}
-                label
-              >
+            <option value="utility">
+              Utility
+            </option>
 
-                {scopeData.map((entry, index) => (
+            <option value="travel">
+              Travel
+            </option>
 
-                  <Cell
-                    key={index}
-                    fill={COLORS[index]}
-                  />
+          </select>
 
-                ))}
+          <input
+            type="file"
+            onChange={(e) =>
+              setFile(
+                e.target.files[0]
+              )
+            }
+          />
 
-              </Pie>
+          <button onClick={uploadFile}>
+            Upload CSV
+          </button>
 
-              <Tooltip />
-
-            </PieChart>
-
-          </ResponsiveContainer>
-
-        </div>
-
-
-        <div className="chart-card">
-
-          <h3>
-            Emissions by Source
-          </h3>
-
-          <ResponsiveContainer
-            width="100%"
-            height={320}
-          >
-
-            <BarChart data={sourceData}>
-
-              <CartesianGrid strokeDasharray="3 3" />
-
-              <XAxis dataKey="name" />
-
-              <YAxis />
-
-              <Tooltip />
-
-              <Bar
-                dataKey="emissions"
-                fill="#2563eb"
-              />
-
-            </BarChart>
-
-          </ResponsiveContainer>
+          <p>{message}</p>
 
         </div>
 
-      </div>
+        {/* Metrics */}
 
+        <div className="metrics-grid">
 
-      {/* TABLE */}
+          <div className="metric-card">
 
-      <div className="table-card">
+            <h3>Total Records</h3>
 
-        <h2>
-          Emission Records
-        </h2>
+            <h1>
+              {records.length}
+            </h1>
 
-        <div className="table-wrapper">
+          </div>
+
+          <div className="metric-card">
+
+            <h3>Total CO₂e</h3>
+
+            <h1>
+              {totalEmissions} kg
+            </h1>
+
+          </div>
+
+        </div>
+
+        {/* Charts */}
+
+        <div className="charts-grid">
+
+          <div className="chart-card">
+
+            <h3>
+              Scope Distribution
+            </h3>
+
+            <ResponsiveContainer
+              width="100%"
+              height={300}
+            >
+
+              <PieChart>
+
+                <Pie
+                  data={scopeData}
+                  dataKey="value"
+                  outerRadius={100}
+                  label
+                >
+
+                  {scopeData.map(
+                    (entry, index) => (
+
+                      <Cell
+                        key={index}
+                        fill={COLORS[index]}
+                      />
+
+                    )
+                  )}
+
+                </Pie>
+
+                <Tooltip />
+
+              </PieChart>
+
+            </ResponsiveContainer>
+
+          </div>
+
+          <div className="chart-card">
+
+            <h3>
+              Emissions by Source
+            </h3>
+
+            <ResponsiveContainer
+              width="100%"
+              height={300}
+            >
+
+              <BarChart data={sourceData}>
+
+                <CartesianGrid strokeDasharray="3 3" />
+
+                <XAxis dataKey="name" />
+
+                <YAxis />
+
+                <Tooltip />
+
+                <Bar
+                  dataKey="emissions"
+                  fill="#2563eb"
+                />
+
+              </BarChart>
+
+            </ResponsiveContainer>
+
+          </div>
+
+        </div>
+
+        {/* Records */}
+
+        <div className="table-card">
+
+          <h2>
+            Emission Records
+          </h2>
 
           <table>
 
@@ -322,21 +417,11 @@ export default function Dashboard() {
               <tr>
 
                 <th>ID</th>
-
                 <th>Source</th>
-
                 <th>Scope</th>
-
                 <th>Category</th>
-
-                <th>Activity</th>
-
                 <th>CO₂e</th>
-
-                <th>Validation</th>
-
                 <th>Status</th>
-
                 <th>Actions</th>
 
               </tr>
@@ -357,50 +442,15 @@ export default function Dashboard() {
 
                   <td>{record.category}</td>
 
-                  <td>
-                    {record.activity_value}
-                    {' '}
-                    {record.activity_unit}
-                  </td>
+                  <td>{record.co2e_kg}</td>
 
                   <td>
-                    {record.co2e_kg}
-                  </td>
-
-                  <td>
-
-                    <span
-                      className={
-                        record.validation_status === 'warning'
-                          ? 'badge-warning'
-                          : 'badge-valid'
-                      }
-                    >
-                      {record.validation_status}
-                    </span>
-
-                  </td>
-
-                  <td>
-
-                    <span
-                      className={
-                        record.approval_status === 'approved'
-                          ? 'badge-approved'
-                          : record.approval_status === 'rejected'
-                          ? 'badge-rejected'
-                          : 'badge-warning'
-                      }
-                    >
-                      {record.approval_status}
-                    </span>
-
+                    {record.approval_status}
                   </td>
 
                   <td>
 
                     <button
-                      className="btn-approve"
                       onClick={() =>
                         approveRecord(record.id)
                       }
@@ -408,9 +458,7 @@ export default function Dashboard() {
                       Approve
                     </button>
 
-
                     <button
-                      className="btn-reject"
                       onClick={() =>
                         rejectRecord(record.id)
                       }
@@ -419,6 +467,51 @@ export default function Dashboard() {
                     </button>
 
                   </td>
+
+                </tr>
+
+              ))}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+        {/* Audit Logs */}
+
+        <div className="table-card">
+
+          <h2>Audit Logs</h2>
+
+          <table>
+
+            <thead>
+
+              <tr>
+
+                <th>ID</th>
+                <th>Record</th>
+                <th>Action</th>
+                <th>User</th>
+
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              {auditLogs.map((log) => (
+
+                <tr key={log.id}>
+
+                  <td>{log.id}</td>
+
+                  <td>{log.record_id}</td>
+
+                  <td>{log.action}</td>
+
+                  <td>{log.changed_by}</td>
 
                 </tr>
 
