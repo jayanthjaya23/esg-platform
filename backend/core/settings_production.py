@@ -6,14 +6,6 @@ SECRET_KEY = "esg-secret-key-production"
 
 ALLOWED_HOSTS = ["*"]
 
-INSTALLED_APPS = INSTALLED_APPS + [
-    "corsheaders",
-]
-
-MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
-] + MIDDLEWARE
-
 CORS_ALLOW_ALL_ORIGINS = True
 
 CSRF_TRUSTED_ORIGINS = [
