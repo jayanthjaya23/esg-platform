@@ -4,12 +4,7 @@ DEBUG = False
 
 SECRET_KEY = "esg-secret-key-production"
 
-ALLOWED_HOSTS = [
-    "esg-platform-production-c417.up.railway.app",
-    "mindful-motivation-production-6d84.up.railway.app",
-    "localhost",
-    "127.0.0.1",
-]
+ALLOWED_HOSTS = ["*"]
 
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -18,7 +13,9 @@ CSRF_TRUSTED_ORIGINS = [
     "https://esg-platform-production-c417.up.railway.app",
 ]
 
-STATIC_ROOT = BASE_DIR / "staticfiles"
+INSTALLED_APPS += [
+    "corsheaders",
+]
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -31,5 +28,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
