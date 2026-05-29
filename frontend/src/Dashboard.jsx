@@ -16,7 +16,7 @@ import {
 
 export default function Dashboard() {
 
-  const API_BASE = "http://127.0.0.1:8000";
+  const API_BASE = "https://esg-platform-production-c417.up.railway.app";
 
   const [records, setRecords] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
